@@ -2184,4 +2184,25 @@ function imprimirComanda() {
   @page { size: 80mm auto; margin: 6mm; }
   body { font-family: 'Courier New', Courier, monospace; font-size: 11pt; line-height: 1.7; color: #000; background: #fff; padding: 8mm; width: 100%; }
   pre  { white-space: pre-wrap; word-break: break-word; width: 100%; font-family: inherit; font-size: inherit; line-height: inherit; }
-  @media print { body { paddin
+  @media print { body { padding: 0; } @page { margin: 6mm; } }
+</style>
+</head>
+<body>
+<pre>${texto.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
+<script>
+  window.onload = function() { window.focus(); window.print(); setTimeout(function(){ window.close(); }, 800); };
+<\/script>
+</body>
+</html>`);
+  win.document.close();
+}
+
+// ============================================================
+//  BOOT
+// ============================================================
+if (restaurarSessao()) {
+  abrirPainel();
+}
+</script>
+</body>
+</html>
