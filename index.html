@@ -226,7 +226,7 @@ select.inp{cursor:pointer;}
   <div class="panel">
     <div class="ph">
       <div class="ph-title">🛒 Seu Pedido</div>
-      <button class="x-btn" onclick="close('ov-cart')">✕</button>
+      <button class="x-btn" onclick="closeOv('ov-cart')">✕</button>
     </div>
     <div class="cart-body" id="ci-list"></div>
     <div class="oform" id="oform">
@@ -270,7 +270,7 @@ select.inp{cursor:pointer;}
 
       <button class="wpp-btn" onclick="sendOrder()">
         <svg class="wpp-icon" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M11.999 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2.05 22l4.926-1.367A9.945 9.945 0 0012 22c5.523 0 10-4.477 10-10S17.523 2 12 2z"/></svg>
-        Enviar pelo WhatsApp
+        Fazer Pedido
       </button>
     </div>
   </div>
@@ -422,7 +422,7 @@ function openProd(id) {
   document.getElementById('pp').innerHTML = `
     <div class="ph">
       <div class="ph-title">Detalhes</div>
-      <button class="x-btn" onclick="close('ov-prod')">✕</button>
+      <button class="x-btn" onclick="closeOv('ov-prod')">✕</button>
     </div>
     ${img}
     <div class="pm-body">
@@ -441,7 +441,7 @@ function openProd(id) {
         </button>
       </div>
     </div>`;
-  open('ov-prod');
+  openOv('ov-prod');
 }
 
 function mq(d) {
@@ -449,7 +449,7 @@ function mq(d) {
   document.getElementById('mq-n').textContent = mQty;
   document.getElementById('mq-t').textContent = (Number(mItem.preco)*mQty).toFixed(2);
 }
-function addFromModal() { addCart(mItem.id, mQty); close('ov-prod'); }
+function addFromModal() { addCart(mItem.id, mQty); closeOv('ov-prod'); }
 
 // ── CART ─────────────────────────────────────────────────────
 function addCart(id, qty) {
@@ -503,7 +503,7 @@ function renderCart() {
   }).join('');
 }
 
-function openCart() { renderCart(); open('ov-cart'); }
+function openCart() { renderCart(); openOv('ov-cart'); }
 
 // ── ENTREGA ──────────────────────────────────────────────────
 function entrgChange(v) {
@@ -550,7 +550,7 @@ function sendOrder() {
 
   cart = [];
   syncFab();
-  close('ov-cart');
+  closeOv('ov-cart');
   toast('✅ Pedido enviado pelo WhatsApp!');
   ['fn','ftel','fend','fmesa','fpgto','fobs'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
   document.getElementById('fentr').value='';
@@ -558,12 +558,12 @@ function sendOrder() {
 }
 
 // ── MODAL HELPERS ────────────────────────────────────────────
-function open(id)  { document.getElementById(id).classList.add('open'); document.body.style.overflow='hidden'; }
-function close(id) { document.getElementById(id).classList.remove('open'); document.body.style.overflow=''; }
-function bgClose(e,id) { if(e.target===document.getElementById(id)) close(id); }
+function openOv(id)  { document.getElementById(id).classList.add('open'); document.body.style.overflow='hidden'; }
+function closeOv(id) { document.getElementById(id).classList.remove('open'); document.body.style.overflow=''; }
+function bgClose(e,id) { if(e.target===document.getElementById(id)) closeOv(id); }
 
 document.addEventListener('keydown', e => {
-  if(e.key==='Escape') { close('ov-cart'); close('ov-prod'); }
+  if(e.key==='Escape') { closeOv('ov-cart'); closeOv('ov-prod'); }
 });
 
 // ── TOAST ────────────────────────────────────────────────────
