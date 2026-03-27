@@ -512,7 +512,7 @@ function entrgChange(v) {
 }
 
 // ── ENVIAR PEDIDO ─────────────────────────────────────────────
-function sendOrder() {
+async function sendOrder() {
   const nome  = document.getElementById('fn').value.trim();
   const tel   = document.getElementById('ftel').value.trim();
   const entr  = document.getElementById('fentr').value;
@@ -529,6 +529,51 @@ function sendOrder() {
 
   const tot = cart.reduce((s,c)=>s+c.i.preco*c.qty,0);
 
+  // ── SALVAR NO SUPABASE DO CLIENTE ──────────────────────────
+  const pedido = {
+    slug: SLUG,
+    empresa: EMPRESA,
+    cliente_nome: nome,
+    cliente_tel: tel || null,
+    tipo_entrega: entr,
+    endereco: entr==='Delivery' ? end : null,
+    mesa: entr==='Mesa (Local)' ? mesa : null,
+    pagamento: pgto || null,
+    observacoes: obs || null,
+    itens: cart.map(c => ({
+      id: c.i.id,
+      nome: c.i.nome,
+      quantidade: c.qty,
+      preco_unit: c.i.preco,
+      subtotal: +(c.i.preco * c.qty).toFixed(2)
+    })),
+    total: +tot.toFixed(2),
+    status: 'novo',
+    criado_em: new Date().toISOString()
+  };
+
+  try {
+    const r = await fetch(`${CL_URL}/rest/v1/pedidos`, {
+      method: 'POST',
+      headers: {
+        apikey: CL_KEY,
+        Authorization: 'Bearer ' + CL_KEY,
+        'Content-Type': 'application/json',
+        Prefer: 'return=minimal'
+      },
+      body: JSON.stringify(pedido)
+    });
+    if (!r.ok) {
+      const err = await r.text();
+      console.error('Supabase error:', err);
+      toast('⚠️ Erro ao salvar pedido no sistema. Pedido enviado só pelo WhatsApp.', true);
+    }
+  } catch(e) {
+    console.error('Supabase error:', e);
+    toast('⚠️ Erro de conexão com o sistema. Pedido enviado só pelo WhatsApp.', true);
+  }
+
+  // ── ENVIAR WHATSAPP ────────────────────────────────────────
   let msg = `🍔 *PEDIDO — ${EMPRESA}*\n`;
   msg += `━━━━━━━━━━━━━━\n`;
   msg += `👤 *Cliente:* ${nome}\n`;
@@ -551,40 +596,5 @@ function sendOrder() {
   cart = [];
   syncFab();
   closeOv('ov-cart');
-  toast('✅ Pedido enviado pelo WhatsApp!');
-  ['fn','ftel','fend','fmesa','fpgto','fobs'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
-  document.getElementById('fentr').value='';
-  entrgChange('');
-}
-
-// ── MODAL HELPERS ────────────────────────────────────────────
-function openOv(id)  { document.getElementById(id).classList.add('open'); document.body.style.overflow='hidden'; }
-function closeOv(id) { document.getElementById(id).classList.remove('open'); document.body.style.overflow=''; }
-function bgClose(e,id) { if(e.target===document.getElementById(id)) closeOv(id); }
-
-document.addEventListener('keydown', e => {
-  if(e.key==='Escape') { closeOv('ov-cart'); closeOv('ov-prod'); }
-});
-
-// ── TOAST ────────────────────────────────────────────────────
-function toast(msg, err=false) {
-  const el = document.createElement('div');
-  el.className = 'ti';
-  el.style.borderLeftColor = err ? '#e63946' : '#f5a623';
-  el.textContent = msg;
-  document.getElementById('tc').appendChild(el);
-  setTimeout(()=>el.remove(), 2600);
-}
-
-// ── ERRO ─────────────────────────────────────────────────────
-function erro(msg) {
-  document.getElementById('mc').innerHTML =
-    `<div class="empty fi"><div class="empty-icon">⚠️</div><div class="empty-txt" style="color:var(--red)">${msg}</div></div>`;
-  const l=document.getElementById('loading');
-  l.classList.add('hide'); setTimeout(()=>l.remove(),500);
-}
-
-boot();
-</script>
-</body>
-</html>
+  toast('✅ Pedido registrado e enviado pelo WhatsApp!');
+  ['fn','ftel','fend','fmesa','fpgto','fobs'].forEach(id=>{
