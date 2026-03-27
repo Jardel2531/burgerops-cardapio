@@ -570,9 +570,12 @@ async function sendOrder() {
       subtotal: +(c.i.preco * c.qty).toFixed(2)
     })),
     total: +tot.toFixed(2),
-    status: 'novo',
-    criado_em: new Date().toISOString()
+    status: 'novo'
   };
+
+  console.log('📦 Enviando pedido para Supabase...');
+  console.log('URL:', CL_URL + '/rest/v1/pedidos');
+  console.log('Payload:', JSON.stringify(pedido, null, 2));
 
   try {
     const r = await fetch(`${CL_URL}/rest/v1/pedidos`, {
@@ -581,17 +584,20 @@ async function sendOrder() {
         apikey: CL_KEY,
         Authorization: 'Bearer ' + CL_KEY,
         'Content-Type': 'application/json',
-        Prefer: 'return=minimal'
+        Prefer: 'return=representation'
       },
       body: JSON.stringify(pedido)
     });
+    const respText = await r.text();
+    console.log('Supabase status:', r.status, r.statusText);
+    console.log('Supabase response:', respText);
     if (!r.ok) {
-      const err = await r.text();
-      console.error('Supabase error:', err);
-      toast('⚠️ Erro ao salvar pedido no sistema. Pedido enviado só pelo WhatsApp.', true);
+      toast('⚠️ Erro ao salvar pedido (HTTP ' + r.status + '). Veja o console (F12).', true);
+    } else {
+      console.log('✅ Pedido salvo com sucesso no Supabase!');
     }
   } catch(e) {
-    console.error('Supabase error:', e);
+    console.error('❌ Supabase fetch error:', e);
     toast('⚠️ Erro de conexão com o sistema. Pedido enviado só pelo WhatsApp.', true);
   }
 
