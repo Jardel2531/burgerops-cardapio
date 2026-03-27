@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#0d0d0d">
+<title>BurgerOps Pro — Cardápio Digital</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:    #0d0d0d;
+  --bg2:   #161616;
+  --bg3:   #1e1e1e;
+  --bg4:   #252525;
+  --gold:  #f5a623;
+  --red:   #e63946;
+  --green: #25c06d;
+  --text:  #f2f2f2;
+  --muted: #888;
+  --bdr:   rgba(255,255,255,.08);
+  --accent:     #f5a623;
+  --accent-rgb: 245,166,35;
+  --accent-txt: #000;
+}
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+html { scroll-behavior:smooth; }
+body {
+  background:var(--bg); color:var(--text);
+  font-family:'Nunito',sans-serif;
+  min-height:100vh;
+  -webkit-tap-highlight-color:transparent;
+}
+#boot {
+  position:fixed; inset:0; z-index:9000;
+  background:var(--bg);
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center; gap:18px;
+}
+#boot::before {
+  content:''; position:absolute; inset:0;
+  background-image:radial-gradient(circle,rgba(245,166,35,.055) 1px,transparent 1px);
+  background-size:30px 30px; pointer-events:none;
+}
+.boot-icon  { font-size:62px; animation:bob 2.8s ease-in-out infinite; position:relative; z-index:1; }
+.boot-brand { font-family:'Bebas Neue'; font-size:30px; letter-spacing:2px; color:var(--gold); position:relative; z-index:1; text-shadow:0 0 40px rgba(245,166,35,.3); }
+.boot-ring  { width:38px; height:38px; border:3px solid rgba(245,166,35,.15); border-top-color:var(--gold); border-radius:50%; animation:spin .7s linear infinite; position:relative; z-index:1; }
+.boot-txt   { font-size:13px; color:var(--muted); position:relative; z-index:1; min-height:20px; }
+@keyframes bob  { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-7px)} }
+@keyframes spin { to{transform:rotate(360deg)} }
+#rt-badge { position:fixed; top:38px; right:12px; z-index:500; background:var(--bg2); border:1px solid var(--bdr); border-radius:20px; padding:5px 12px; font-size:11px; color:var(--muted); display:flex; align-items:center; gap:6px; }
+.rt-dot     { width:6px; height:6px; border-radius:50%; background:var(--green); animation:pulse 2s infinite; }
+.rt-dot.off { background:var(--red); animation:none; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+.hero { position:relative; overflow:hidden; padding:52px 20px 36px; text-align:center; background:var(--bg2); border-bottom:1px solid var(--bdr); }
+.hero::before { content:''; position:absolute; inset:0; background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(var(--accent-rgb),.12) 0%,transparent 70%); pointer-events:none; }
+.platform-tag { display:inline-flex; align-items:center; gap:6px; background:rgba(var(--accent-rgb),.1); border:1px solid rgba(var(--accent-rgb),.25); border-radius:20px; padding:4px 14px; font-size:11px; font-weight:800; color:var(--accent); letter-spacing:1.5px; text-transform:uppercase; margin-bottom:14px; position:relative; z-index:1; }
+.hero-nome { font-family:'Bebas Neue'; font-size:clamp(38px,9vw,68px); letter-spacing:2px; line-height:1; color:var(--text); position:relative; z-index:1; }
+.hero-sub  { font-size:13px; color:var(--muted); margin-top:8px; letter-spacing:2px; text-transform:uppercase; font-weight:700; position:relative; z-index:1; }
+.hero-pills { display:flex; justify-content:center; gap:8px; margin-top:16px; flex-wrap:wrap; position:relative; z-index:1; }
+.hero-pill  { background:rgba(255,255,255,.05); border:1px solid var(--bdr); border-radius:20px; padding:5px 14px; font-size:12px; color:var(--muted); font-weight:700; }
+.sticky { position:sticky; top:0; z-index:50; background:var(--bg); border-bottom:1px solid var(--bdr); padding:12px 16px; }
+.sw  { position:relative; margin-bottom:10px; }
+.si  { position:absolute; left:13px; top:50%; transform:translateY(-50%); font-size:15px; color:var(--muted); pointer-events:none; }
+.sinp { width:100%; background:var(--bg3); border:1px solid var(--bdr); border-radius:12px; padding:11px 14px 11px 40px; font-family:'Nunito'; font-size:14px; color:var(--text); outline:none; transition:border-color .2s; }
+.sinp::placeholder { color:var(--muted); }
+.sinp:focus { border-color:var(--accent); }
+.cats { display:flex; gap:8px; overflow-x:auto; scrollbar-width:none; padding-bottom:2px; }
+.cats::-webkit-scrollbar { display:none; }
+.cbt { flex-shrink:0; background:var(--bg3); border:1px solid var(--bdr); border-radius:20px; padding:6px 16px; font-family:'Nunito'; font-size:12px; font-weight:800; color:var(--muted); cursor:pointer; transition:all .15s; white-space:nowrap; display:flex; align-items:center; gap:5px; }
+.cbt.on { background:var(--accent); border-color:var(--accent); color:var(--accent-txt); }
+.cbt:not(.on):hover { border-color:var(--accent); color:var(--accent); }
+main { padding:20px 16px 120px; max-width:640px; margin:0 auto; }
+.section { margin-bottom:32px; }
+.sec-title { font-family:'Bebas Neue'; font-size:22px; letter-spacing:1.5px; color:var(--accent); margin-bottom:14px; display:flex; align-items:center; gap:10px; }
+.sec-title::after { content:''; flex:1; height:1px; background:var(--bdr); }
+.ic { background:var(--bg2); border:1px solid var(--bdr); border-radius:16px; display:flex; align-items:center; gap:14px; padding:14px; margin-bottom:10px; cursor:pointer; transition:border-color .2s, transform .15s; position:relative; overflow:hidden; animation:fup .3s ease both; }
+@keyframes fup { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:none} }
+.ic::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--accent); opacity:0; transition:opacity .2s; border-radius:3px 0 0 3px; }
+.ic:hover { border-color:rgba(var(--accent-rgb),.4); transform:translateY(-1px); }
+.ic:hover::before { opacity:1; }
+.ic.off { opacity:.42; pointer-events:none; }
+.ie { font-size:34px; flex-shrink:0; width:54px; height:54px; background:var(--bg3); border-radius:12px; display:flex; align-items:center; justify-content:center; }
+.ii { flex:1; min-width:0; }
+.in { font-weight:800; font-size:14px; color:var(--text); margin-bottom:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.id { font-size:12px; color:var(--muted); line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.ir { flex-shrink:0; display:flex; flex-direction:column; align-items:flex-end; gap:8px; }
+.ip { font-family:'Bebas Neue'; font-size:22px; color:var(--accent); letter-spacing:.5px; line-height:1; }
+.ip small { font-family:'Nunito'; font-size:11px; font-weight:700; color:var(--muted); }
+.ab { background:var(--accent); border:none; border-radius:8px; width:32px; height:32px; font-size:20px; font-weight:900; color:var(--accent-txt); cursor:pointer; display:flex; align-items:center; justify-content:center; transition:transform .1s, filter .15s; line-height:1; }
+.ab:hover { filter:brightness(1.12); transform:scale(1.1); }
+.off-badge { position:absolute; top:10px; right:10px; background:rgba(230,57,70,.15); border:1px solid rgba(230,57,70,.3); color:var(--red); font-size:10px; font-weight:800; padding:2px 8px; border-radius:20px; text-transform:uppercase; letter-spacing:.5px; }
+.cbar { position:fixed; bottom:0; left:0; right:0; z-index:100; background:var(--bg2); border-top:1px solid var(--bdr); padding:12px 16px; display:flex; align-items:center; gap:12px; transform:translateY(100%); transition:transform .3s cubic-bezier(.4,0,.2,1); max-width:640px; margin:0 auto; }
+.cbar.on { transform:translateY(0); }
+.ci { flex:1; }
+.cc { font-size:12px; color:var(--muted); font-weight:700; }
+.ct { font-family:'Bebas Neue'; font-size:22px; color:var(--accent); }
+.cwpp { background:#25D366; border:none; border-radius:12px; padding:12px 20px; font-family:'Nunito'; font-size:14px; font-weight:900; color:#fff; cursor:pointer; display:flex; align-items:center; gap:8px; transition:transform .15s, filter .15s; white-space:nowrap; }
+.cwpp:hover { transform:scale(1.03); filter:brightness(1.1); }
+.sbg { position:fixed; inset:0; background:rgba(0,0,0,.78); z-index:200; display:flex; align-items:flex-end; justify-content:center; opacity:0; pointer-events:none; transition:opacity .25s; backdrop-filter:blur(4px); }
+.sbg.open { opacity:1; pointer-events:all; }
+.sheet { background:var(--bg2); border-radius:20px 20px 0 0; border-top:1px solid var(--bdr); width:100%; max-width:640px; padding:24px 20px 40px; transform:translateY(100%); transition:transform .3s cubic-bezier(.4,0,.2,1); max-height:82vh; overflow-y:auto; }
+.sbg.open .sheet { transform:translateY(0); }
+.sh  { width:40px; height:4px; background:var(--bdr); border-radius:2px; margin:0 auto 20px; }
+.se  { font-size:60px; display:block; text-align:center; margin-bottom:12px; }
+.sn  { font-family:'Bebas Neue'; font-size:28px; letter-spacing:1px; color:var(--text); margin-bottom:6px; }
+.sd  { font-size:14px; color:var(--muted); line-height:1.6; margin-bottom:20px; }
+.sp  { font-family:'Bebas Neue'; font-size:36px; color:var(--accent); letter-spacing:1px; margin-bottom:20px; }
+.qr  { display:flex; align-items:center; justify-content:space-between; background:var(--bg3); border-radius:12px; padding:4px; margin-bottom:14px; }
+.qb  { background:var(--bg4); border:none; border-radius:8px; width:40px; height:40px; font-size:22px; font-weight:900; color:var(--text); cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background .15s; }
+.qb:hover { background:var(--accent); color:var(--accent-txt); }
+.qn  { font-family:'Bebas Neue'; font-size:28px; color:var(--text); min-width:40px; text-align:center; }
+.obi { width:100%; background:var(--bg3); border:1px solid var(--bdr); border-radius:10px; padding:10px 14px; font-family:'Nunito'; font-size:13px; color:var(--text); outline:none; margin-bottom:16px; resize:none; transition:border-color .2s; }
+.obi::placeholder { color:var(--muted); }
+.obi:focus { border-color:var(--accent); }
+.cfb { width:100%; background:var(--accent); border:none; border-radius:12px; padding:15px; font-family:'Nunito'; font-size:16px; font-weight:900; color:var(--accent-txt); cursor:pointer; transition:filter .15s, transform .1s; display:flex; align-items:center; justify-content:center; gap:8px; }
+.cfb:hover { filter:brightness(1.08); transform:scale(1.01); }
+.cart-modal-bg { position:fixed; inset:0; background:rgba(0,0,0,.78); z-index:300; display:flex; align-items:flex-end; justify-content:center; opacity:0; pointer-events:none; transition:opacity .25s; backdrop-filter:blur(4px); }
+.cart-modal-bg.open { opacity:1; pointer-events:all; }
+.cart-modal { background:var(--bg2); border-radius:20px 20px 0 0; border-top:1px solid var(--bdr); width:100%; max-width:640px; padding:24px 20px 40px; transform:translateY(100%); transition:transform .3s cubic-bezier(.4,0,.2,1); max-height:80vh; overflow-y:auto; }
+.cart-modal-bg.open .cart-modal { transform:translateY(0); }
+.cart-modal-title { font-family:'Bebas Neue'; font-size:26px; letter-spacing:1.5px; color:var(--text); margin-bottom:18px; display:flex; align-items:center; justify-content:space-between; }
+.cart-close-btn { background:var(--bg3); border:1px solid var(--bdr); border-radius:8px; width:34px; height:34px; display:flex; align-items:center; justify-content:center; font-size:18px; cursor:pointer; color:var(--muted); transition:background .15s; }
+.cart-close-btn:hover { background:var(--bg4); color:var(--text); }
+.cart-item-row { display:flex; align-items:center; gap:12px; background:var(--bg3); border:1px solid var(--bdr); border-radius:14px; padding:12px 14px; margin-bottom:10px; }
+.cart-item-emoji { font-size:28px; flex-shrink:0; }
+.cart-item-info  { flex:1; min-width:0; }
+.cart-item-name  { font-weight:800; font-size:14px; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.cart-item-obs   { font-size:11px; color:var(--muted); margin-top:2px; }
+.cart-item-qty   { font-family:'Bebas Neue'; font-size:15px; color:var(--muted); margin-top:3px; }
+.cart-item-right { display:flex; flex-direction:column; align-items:flex-end; gap:8px; flex-shrink:0; }
+.cart-item-price { font-family:'Bebas Neue'; font-size:20px; color:var(--accent); }
+.cart-del-btn { background:rgba(230,57,70,.12); border:1px solid rgba(230,57,70,.3); border-radius:8px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; font-size:15px; cursor:pointer; color:var(--red); transition:background .15s, transform .1s; }
+.cart-del-btn:hover { background:rgba(230,57,70,.25); transform:scale(1.1); }
+.cart-empty-msg { text-align:center; padding:36px 20px; color:var(--muted); font-size:14px; font-weight:700; }
+.cart-empty-msg span { font-size:42px; display:block; margin-bottom:10px; }
+.cart-divider { height:1px; background:var(--bdr); margin:16px 0; }
+.cart-total-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+.cart-total-label { font-weight:800; font-size:15px; color:var(--muted); }
+.cart-total-value { font-family:'Bebas Neue'; font-size:28px; color:var(--accent); }
+.cart-wpp-btn { width:100%; background:#25D366; border:none; border-radius:12px; padding:15px; font-family:'Nunito'; font-size:16px; font-weight:900; color:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; transition:filter .15s, transform .1s; }
+.cart-wpp-btn:hover { filter:brightness(1.08); transform:scale(1.01); }
+#ub { position:fixed; top:0; left:0; right:0; z-index:400; background:var(--accent); color:var(--accent-txt); text-align:center; padding:8px; font-size:13px; font-weight:800; transform:translateY(-100%); transition:transform .3s; }
+#ub.show { transform:translateY(0); }
+#toast { position:fixed; top:18px; left:50%; transform:translateX(-50%) translateY(-80px); background:var(--bg3); border:1px solid var(--green); border-radius:12px; padding:10px 20px; font-size:13px; font-weight:800; color:var(--green); z-index:999; transition:transform .3s cubic-bezier(.4,0,.2,1); white-space:nowrap; box-shadow:0 8px 32px rgba(0,0,0,.4); }
+#toast.show { transform:translateX(-50%) translateY(0); }
+.empty { text-align:center; padding:48px 20px; color:var(--muted); }
+.empty span { font-size:48px; display:block; margin-bottom:12px; }
+footer { text-align:center; padding:28px 20px 20px; color:var(--muted); font-size:12px; border-top:1px solid var(--bdr); }
+footer strong { color:var(--accent); }
+@media(min-width:640px){
+  .cbar { left:50%; right:auto; width:640px; transform:translateX(-50%) translateY(100%); }
+  .cbar.on { transform:translateX(-50%) translateY(0); }
+}
+.checkout-bg { position:fixed; inset:0; background:rgba(0,0,0,.82); z-index:400; display:flex; align-items:flex-end; justify-content:center; opacity:0; pointer-events:none; transition:opacity .25s; backdrop-filter:blur(4px); }
+.checkout-bg.open { opacity:1; pointer-events:all; }
+.checkout-modal { background:var(--bg2); border-radius:20px 20px 0 0; border-top:1px solid var(--bdr); width:100%; max-width:640px; padding:24px 20px 44px; transform:translateY(100%); transition:transform .3s cubic-bezier(.4,0,.2,1); }
+.checkout-bg.open .checkout-modal { transform:translateY(0); }
+.checkout-title { font-family:'Bebas Neue'; font-size:26px; letter-spacing:1.5px; color:var(--text); margin-bottom:6px; display:flex; align-items:center; justify-content:space-between; }
+.checkout-sub { font-size:13px; color:var(--muted); margin-bottom:22px; line-height:1.5; }
+.co-label { font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.8px; color:var(--muted); margin-bottom:6px; display:block; }
+.co-input { width:100%; background:var(--bg3); border:1px solid var(--bdr); border-radius:10px; padding:13px 14px; font-family:'Nunito'; font-size:15px; color:var(--text); outline:none; transition:border-color .2s; margin-bottom:14px; }
+.co-input:focus { border-color:var(--accent); }
+.co-input::placeholder { color:var(--muted); }
+.co-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.co-entrega { display:flex; gap:8px; margin-bottom:16px; }
+.co-opt { flex:1; padding:11px; background:var(--bg3); border:1.5px solid var(--bdr); border-radius:10px; font-family:'Nunito'; font-size:13px; font-weight:800; color:var(--muted); cursor:pointer; text-align:center; transition:all .15s; }
+.co-opt.on { background:rgba(var(--accent-rgb),.12); border-color:var(--accent); color:var(--accent); }
+.co-pgto { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:20px; }
+.co-pgto-opt { padding:8px 14px; background:var(--bg3); border:1.5px solid var(--bdr); border-radius:8px; font-family:'Nunito'; font-size:12px; font-weight:800; color:var(--muted); cursor:pointer; transition:all .15s; }
+.co-pgto-opt.on { background:rgba(var(--accent-rgb),.12); border-color:var(--accent); color:var(--accent); }
+.co-confirm-btn { width:100%; background:var(--green); border:none; border-radius:12px; padding:15px; font-family:'Nunito'; font-size:16px; font-weight:900; color:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; transition:filter .15s, transform .1s; }
+.co-confirm-btn:hover { filter:brightness(1.08); transform:scale(1.01); }
+.co-confirm-btn:disabled { opacity:.5; cursor:not-allowed; transform:none; }
+.co-spinner { width:18px; height:18px; border:2px solid rgba(255,255,255,.3); border-top-color:#fff; border-radius:50%; animation:spin .6s linear infinite; display:none; }
+</style>
+</head>
+<body>
+
+<div id="ub">🔄 Cardápio atualizado!</div>
+<div id="rt-badge">
+  <div class="rt-dot off" id="rt-dot"></div>
+  <span id="rt-lbl"></span>
+</div>
+
+<div id="boot">
+  <div class="boot-icon">🍔</div>
+  <div class="boot-brand">BurgerOps Pro</div>
+  <div class="boot-ring"></div>
+  <div class="boot-txt" id="boot-txt">Iniciando...</div>
+</div>
+
+<div id="page" style="display:none">
+  <header class="hero">
+    <div class="platform-tag">🍔 BurgerOps Pro</div>
+    <div class="hero-nome" id="hero-nome">Carregando...</div>
+    <div class="hero-sub"  id="hero-sub">Cardápio Digital</div>
+    <div class="hero-pills" id="hero-pills"></div>
+  </header>
+  <div class="sticky">
+    <div class="sw">
+      <span class="si">🔍</span>
+      <input type="text" class="sinp" id="search" placeholder="Buscar no cardápio..." oninput="filter()">
+    </div>
+    <div class="cats" id="cats"></div>
+  </div>
+  <main id="main"></main>
+  <footer>Powered by <strong>BurgerOps Pro</strong> — Peça pelo WhatsApp!</footer>
+</div>
+
+<div class="cbar" id="cbar">
+  <div class="ci" style="cursor:pointer" onclick="openCartModal()">
+    <div class="cc" id="cc">0 itens</div>
+    <div class="ct" id="ct">R$ 0,00</div>
+  </div>
+  <button class="cwpp" onclick="openCartModal()">🛒 Ver carrinho</button>
+</div>
+
+<div class="cart-modal-bg" id="cart-modal-bg" onclick="if(event.target===this)closeCartModal()">
+  <div class="cart-modal">
+    <div class="cart-modal-title">
+      🛒 Meu Carrinho
+      <button class="cart-close-btn" onclick="closeCartModal()">✕</button>
+    </div>
+    <div id="cart-items-list"></div>
+    <div id="cart-footer" style="display:none">
+      <div class="cart-divider"></div>
+      <div class="cart-total-row">
+        <span class="cart-total-label">Total</span>
+        <span class="cart-total-value" id="cart-total-modal">R$ 0,00</span>
+      </div>
+      <button class="cart-wpp-btn" onclick="pedirWpp()">💬 Pedir pelo WhatsApp</button>
+    </div>
+  </div>
+</div>
+
+<div class="sbg" id="sbg" onclick="if(event.target===this)closeSheet()">
+  <div class="sheet">
+    <div class="sh"></div>
+    <span class="se" id="se"></span>
+    <div class="sn" id="sn"></div>
+    <div class="sd" id="sd"></div>
+    <div class="sp" id="spr"></div>
+    <div class="qr">
+      <button class="qb" onclick="chg(-1)">−</button>
+      <span class="qn" id="qn">1</span>
+      <button class="qb" onclick="chg(1)">+</button>
+    </div>
+    <textarea class="obi" id="obs" rows="2" placeholder="Alguma obs? (sem cebola, molho à parte...)"></textarea>
+    <button class="cfb" onclick="addCart()">🛒 Adicionar — <span id="sub">R$ 0,00</span></button>
+  </div>
+</div>
+
+<div id="toast">✅ Adicionado!</div>
+
+<div class="checkout-bg" id="checkout-bg" onclick="if(event.target===this)closeCheckout()">
+  <div class="checkout-modal">
+    <div class="checkout-title">
+      ✅ Finalizar Pedido
+      <button class="cart-close-btn" onclick="closeCheckout()">✕</button>
+    </div>
+    <div class="checkout-sub">Preencha seus dados para confirmar o pedido.</div>
+    <div class="co-row">
+      <div>
+        <label class="co-label">Seu nome *</label>
+        <input class="co-input" id="co-nome" type="text" placeholder="Ex: João Silva">
+      </div>
+      <div>
+        <label class="co-label">Telefone *</label>
+        <input class="co-input" id="co-tel" type="tel" placeholder="(35) 99999-9999">
+      </div>
+    </div>
+    <label class="co-label">Tipo de entrega</label>
+    <div class="co-entrega" id="co-entrega">
+      <div class="co-opt on" onclick="selEntrega(this,'Delivery')">🛵 Delivery</div>
+      <div class="co-opt"    onclick="selEntrega(this,'Retirada')">🏪 Retirada</div>
+    </div>
+    <div id="co-addr-wrap">
+      <label class="co-label">entrega</label>
+      <input class="co-input" id="co-addr" type="text" placeholder="Rua, número, bairro...">
+    </div>
+    <label class="co-label">Pagamento</label>
+    <div class="co-pgto" id="co-pgto">
+      <div class="co-pgto-opt on" onclick="selPgto(this,'PIX')">PIX</div>
+      <div class="co-pgto-opt"    onclick="selPgto(this,'Dinheiro')">💵 Dinheiro</div>
+      <div class="co-pgto-opt"    onclick="selPgto(this,'Crédito')">💳 Crédito</div>
+      <div class="co-pgto-opt"    onclick="selPgto(this,'Débito')">💳 Débito</div>
+    </div>
+    <button class="co-confirm-btn" id="co-btn" onclick="confirmarPedido()">
+      <div class="co-spinner" id="co-spin"></div>
+      <span id="co-btn-txt">💬 Confirmar e enviar pelo WhatsApp</span>
+    </button>
+  </div>
+</div>
+
+<script>
+'use strict';
+const MASTER_URL = 'https://qgsrdubouphyjsdapkgo.supabase.co';
+const MASTER_KEY = 'sb_publishable_LYUTQmps3aaGSuO4z2aXKg_S45w-seA';
+let SLUG='',CLIENT_URL='',CLIENT_KEY='',WPP_NUM='',NOME='',DEMO_MODE=false;
+let menu=[],cart=[],activeCat='Todos',curItem=null,curQty=1,ws=null;
+const CAT_EMOJI={Burgers:'🍔',Combos:'🎯',Acompanhamentos:'🍟',Bebidas:'🥤',Sobremesas:'🍫',Molhos:'🫙',Pizzas:'🍕',Lanches:'🥪',Porções:'🍟'};
+const DEMO_MENU=[
+  {id:1,nome:'Smash Burguer Classic',categoria:'Burgers',descricao:'Blend 150g, cheddar, alface, tomate, molho especial',preco:32.90,emoji:'🍔',status:'disponivel'},
+  {id:2,nome:'Double Smash',categoria:'Burgers',descricao:'Dois blends 120g, queijo duplo, bacon crocante e pickle',preco:45.90,emoji:'🔥',status:'disponivel'},
+  {id:3,nome:'Chicken Crispy',categoria:'Burgers',descricao:'Frango empanado, maionese de alho, picles e alface crocante',preco:29.90,emoji:'🍗',status:'disponivel'},
+  {id:4,nome:'Veggie Burguer',categoria:'Burgers',descricao:'Blend vegetal, rúcula, tomate seco e pesto caseiro',preco:31.90,emoji:'🥬',status:'disponivel'},
+  {id:5,nome:'Mushroom Swiss',categoria:'Burgers',descricao:'Blend 150g, cogumelos salteados, queijo suíço, cebola cara.',preco:38.90,emoji:'🍄',status:'disponivel'},
+  {id:6,nome:'Combo Smash + Batata',categoria:'Combos',descricao:'Smash Classic + Batata M + Refri 350ml — o favorito da casa!',preco:52.90,emoji:'🎯',status:'disponivel'},
+  {id:7,nome:'Combo Família Double',categoria:'Combos',descricao:'2x Double Smash + 2x Batata G + 2x Refri 350ml',preco:118.90,emoji:'👨‍👩‍👧',status:'disponivel'},
+  {id:8,nome:'Batata Frita M',categoria:'Acompanhamentos',descricao:'Porção média crocante temperada com sal e ervas',preco:14.90,emoji:'🍟',status:'disponivel'},
+  {id:9,nome:'Batata Frita G',categoria:'Acompanhamentos',descricao:'Porção grande crocante temperada com sal e ervas',preco:19.90,emoji:'🍟',status:'disponivel'},
+  {id:10,nome:'Onion Rings',categoria:'Acompanhamentos',descricao:'Anéis de cebola empanados com molho ranch da casa',preco:16.90,emoji:'🧅',status:'disponivel'},
+  {id:11,nome:'Coca-Cola 350ml',categoria:'Bebidas',descricao:'Lata gelada — sabor original',preco:6.90,emoji:'🥤',status:'disponivel'},
+  {id:12,nome:'Suco Natural 400ml',categoria:'Bebidas',descricao:'Laranja, limão ou maracujá — fresquinho na hora',preco:9.90,emoji:'🍊',status:'disponivel'},
+  {id:13,nome:'Água Mineral 500ml',categoria:'Bebidas',descricao:'Gelada, com ou sem gás',preco:4.90,emoji:'💧',status:'disponivel'},
+  {id:14,nome:'Milkshake Oreo',categoria:'Sobremesas',descricao:'Milkshake cremoso com biscoito Oreo triturado e chantilly',preco:18.90,emoji:'🥛',status:'disponivel'},
+  {id:15,nome:'Brownie com Sorvete',categoria:'Sobremesas',descricao:'Brownie quentinho da casa com sorvete de baunilha artesanal',preco:16.90,emoji:'🍫',status:'disponivel'},
+  {id:16,nome:'Molho Especial',categoria:'Molhos',descricao:'Receita secreta da casa — peça junto com qualquer burguer!',preco:3.90,emoji:'🫙',status:'indisponivel'},
+  {id:17,nome:'Cheddar Extra',categoria:'Molhos',descricao:'Porção extra de cheddar cremoso derretido',preco:4.90,emoji:'🧀',status:'disponivel'},
+];
+function getSlugFromUrl(){const p=new URLSearchParams(window.location.search);if(p.get('slug'))return p.get('slug').trim().toLowerCase();const parts=window.location.pathname.split('/').filter(Boolean);const last=parts[parts.length-1];if(last&&!last.includes('.'))return last.toLowerCase();return'';}
+async function masterGet(qs){const r=await fetch(`${MASTER_URL}/rest/v1/config_clientes?${qs}`,{headers:{'apikey':MASTER_KEY,'Authorization':'Bearer '+MASTER_KEY}});if(!r.ok)throw new Error('Erro Master: '+r.status);return r.json();}
+async function clientGet(table,qs){const r=await fetch(`${CLIENT_URL}/rest/v1/${table}?${qs}`,{headers:{'apikey':CLIENT_KEY,'Authorization':'Bearer '+CLIENT_KEY}});if(!r.ok)throw new Error('Erro Client: '+r.status);return r.json();}
+function connectRealtime(){if(!CLIENT_URL||!CLIENT_KEY)return;const wsUrl=CLIENT_URL.replace('https://','wss://').replace('http://','ws://');try{ws=new WebSocket(`${wsUrl}/realtime/v1/websocket?apikey=${CLIENT_KEY}&vsn=1.0.0`);ws.onopen=()=>{setRt(true);ws.send(JSON.stringify({topic:`realtime:public:cardapio:slug=eq.${SLUG}`,event:'phx_join',payload:{},ref:'c1'}));};ws.onmessage=async e=>{const m=JSON.parse(e.data);if(['INSERT','UPDATE','DELETE'].includes(m.event)){try{menu=await clientGet('cardapio',`slug=eq.${SLUG}&order=categoria,nome`);renderCats();filter();showBanner();}catch(_){}}};ws.onerror=()=>setRt(false);ws.onclose=()=>{setRt(false);setTimeout(connectRealtime,5000)};}catch(_){setRt(false);}}
+function setRt(ok){document.getElementById('rt-dot').className=ok?'rt-dot':'rt-dot off';document.getElementById('rt-lbl').textContent=ok?'Ao vivo':(DEMO_MODE?'Demo':'Offline');}
+function showBanner(){const b=document.getElementById('ub');b.classList.add('show');setTimeout(()=>b.classList.remove('show'),3000);}
+async function boot(){SLUG=getSlugFromUrl();setTxt('Verificando...');if(!MASTER_URL||!MASTER_KEY||!SLUG){DEMO_MODE=true;NOME=SLUG?slugToName(SLUG):'Burguer do Zé';WPP_NUM='';menu=DEMO_MENU;montarPagina({nome_empresa:NOME,tagline:'Smash burgers artesanais',emoji:'🍔',horario:'Seg–Dom: 18h às 23h',bairro:'Centro, Ubá–MG',entrega_info:'Delivery disponível'});return;}
+try{setTxt(`Buscando "${SLUG}"...`);const rows=await masterGet(`slug=eq.${encodeURIComponent(SLUG)}&select=*`);if(!rows||rows.length===0){mostrarErro('Negócio não encontrado',`Nenhum estabelecimento com o slug "${SLUG}" foi encontrado.`);return;}const c=rows[0];if(c.status_ativo===false||c.status_ativo==='false'){mostrarErro('Cardápio indisponível','Este estabelecimento está temporariamente suspenso.');return;}CLIENT_URL=(c.cliente_supabase_url||'').trim().replace(/\/$/,'');CLIENT_KEY=(c.cliente_supabase_key||'').trim();WPP_NUM=(c.telefone_suporte||'').replace(/\D/g,'');NOME=c.nome_empresa||slugToName(SLUG);if(!CLIENT_URL||!CLIENT_KEY){mostrarErro('Configuração incompleta','Fale com o suporte do estabelecimento.');return;}setTxt('Carregando cardápio...');menu=await clientGet('cardapio',`slug=eq.${SLUG}&order=categoria,nome`);if(c.cor_destaque)aplicarTema(c.cor_destaque);montarPagina(c);connectRealtime();}catch(e){mostrarErro('Erro ao carregar',e.message||'Tente novamente em instantes.');}}
+function setTxt(t){const el=document.getElementById('boot-txt');if(el)el.textContent=t;}
+function slugToName(s){return s.split('-').map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(' ');}
+function montarPagina(cfg){const nome=cfg.nome_empresa||NOME;document.getElementById('hero-nome').textContent=nome;document.getElementById('hero-sub').textContent=cfg.tagline||'Cardápio Digital';document.title='BurgerOps Pro — '+nome;const pills=[];if(cfg.horario)pills.push(`🕐 ${cfg.horario}`);if(cfg.bairro)pills.push(`📍 ${cfg.bairro}`);if(cfg.entrega_info)pills.push(`🛵 ${cfg.entrega_info}`);if(!pills.length)pills.push('🛵 Delivery disponível');document.getElementById('hero-pills').innerHTML=pills.map(p=>`<span class="hero-pill">${p}</span>`).join('');renderCats();filter();document.getElementById('boot').style.display='none';document.getElementById('page').style.display='block';}
+function aplicarTema(hex){const r=parseInt(hex.slice(1,3),16);const g=parseInt(hex.slice(3,5),16);const b=parseInt(hex.slice(5,7),16);const lum=(0.299*r+0.587*g+0.114*b)/255;document.documentElement.style.setProperty('--accent',hex);document.documentElement.style.setProperty('--accent-rgb',`${r},${g},${b}`);document.documentElement.style.setProperty('--accent-txt',lum>0.55?'#000':'#fff');}
+function mostrarErro(titulo,corpo){document.getElementById('boot').style.display='none';document.getElementById('page').style.display='none';const es=document.getElementById('err');if(!es){const div=document.createElement('div');div.id='err';div.style.cssText='position:fixed;inset:0;z-index:9000;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:24px';div.innerHTML=`<div style="font-size:54px">🔍</div><div style="font-family:'Bebas Neue';font-size:28px;color:var(--red);letter-spacing:1px">${titulo}</div><div style="font-size:14px;color:var(--muted);max-width:340px;line-height:1.7">${corpo}</div><div style="background:var(--bg2);border:1px solid var(--bdr);border-radius:10px;padding:10px 20px;font-size:13px;color:var(--muted)">Acesse: <code style="color:var(--gold)">${window.location.origin+window.location.pathname}?slug=nome-do-negocio</code></div>`;document.body.appendChild(div);}}
+function getCats(){return['Todos',...new Set(menu.map(i=>i.categoria))];}
+function renderCats(){document.getElementById('cats').innerHTML=getCats().map(c=>`<button class="cbt ${c===activeCat?'on':''}" onclick="setCat('${c.replace(/'/g,"\\'")}')"> ${c!=='Todos'?(CAT_EMOJI[c]||''):'🌟'} ${c}</button>`).join('');}
+function setCat(c){activeCat=c;renderCats();filter();}
+function filter(){const q=(document.getElementById('search')?.value||'').toLowerCase();const f=menu.filter(i=>{const mc=activeCat==='Todos'||i.categoria===activeCat;const mq=!q||i.nome.toLowerCase().includes(q)||(i.descricao||'').toLowerCase().includes(q);return mc&&mq;});renderMenu(f);}
+function renderMenu(items){const m=document.getElementById('main');if(!items.length){m.innerHTML=`<div class="empty"><span>🤷</span><p>Nenhum item encontrado.</p></div>`;return;}const g={};items.forEach(i=>{if(!g[i.categoria])g[i.categoria]=[];g[i.categoria].push(i);});m.innerHTML=Object.entries(g).map(([cat,its])=>`<div class="section"><div class="sec-title">${CAT_EMOJI[cat]||''} ${cat}</div>${its.map((item,idx)=>`<div class="ic ${item.status==='indisponivel'?'off':''}" style="animation-delay:${idx*35}ms" onclick="${item.status!=='indisponivel'?`openSheet(${item.id})`:''}""><div class="ie">${item.emoji||'🍔'}</div><div class="ii"><div class="in">${item.nome}</div><div class="id">${item.descricao||''}</div></div><div class="ir"><div class="ip"><small>R$</small> ${Number(item.preco).toFixed(2).replace('.',',')}</div>${item.status!=='indisponivel'?`<button class="ab" onclick="event.stopPropagation();qAdd(${item.id})">+</button>`:''}</div>${item.status==='indisponivel'?'<div class="off-badge">Indisponível</div>':''}</div>`).join('')}</div>`).join('');}
+function openSheet(id){const item=menu.find(i=>i.id===id);if(!item||item.status==='indisponivel')return;curItem=item;curQty=1;document.getElementById('se').textContent=item.emoji||'🍔';document.getElementById('sn').textContent=item.nome;document.getElementById('sd').textContent=item.descricao||'';document.getElementById('spr').textContent=`R$ ${Number(item.preco).toFixed(2).replace('.',',')}`;document.getElementById('qn').textContent=1;document.getElementById('obs').value='';updSub();document.getElementById('sbg').classList.add('open');document.body.style.overflow='hidden';}
+function closeSheet(){document.getElementById('sbg').classList.remove('open');document.body.style.overflow='';}
+function chg(d){curQty=Math.max(1,curQty+d);document.getElementById('qn').textContent=curQty;updSub();}
+function updSub(){if(!curItem)return;document.getElementById('sub').textContent=`R$ ${(curItem.preco*curQty).toFixed(2).replace('.',',')}`;}
+function addCart(){if(!curItem)return;const obs=document.getElementById('obs').value.trim();const ex=cart.find(c=>c.id===curItem.id&&c.obs===obs);if(ex)ex.qty+=curQty;else cart.push({id:curItem.id,nome:curItem.nome,emoji:curItem.emoji||'🍔',preco:curItem.preco,qty:curQty,obs});closeSheet();updCart();showToast(`${curItem.emoji||'🍔'} ${curItem.nome} adicionado!`);}
+function qAdd(id){const item=menu.find(i=>i.id===id);if(!item)return;const ex=cart.find(c=>c.id===id&&!c.obs);if(ex)ex.qty++;else cart.push({id:item.id,nome:item.nome,emoji:item.emoji||'🍔',preco:item.preco,qty:1,obs:''});updCart();showToast(`${item.emoji||'🍔'} ${item.nome} adicionado!`);}
+function updCart(){const qty=cart.reduce((s,i)=>s+i.qty,0);const val=cart.reduce((s,i)=>s+i.preco*i.qty,0);document.getElementById('cc').textContent=`${qty} ${qty===1?'item':'itens'}`;document.getElementById('ct').textContent=`R$ ${val.toFixed(2).replace('.',',')}`;document.getElementById('cbar').classList.toggle('on',qty>0);}
+function removeFromCart(index){cart.splice(index,1);updCart();renderCartModal();}
+function openCartModal(){if(!cart.length)return;renderCartModal();document.getElementById('cart-modal-bg').classList.add('open');document.body.style.overflow='hidden';}
+function closeCartModal(){document.getElementById('cart-modal-bg').classList.remove('open');document.body.style.overflow='';}
+function renderCartModal(){const list=document.getElementById('cart-items-list');const footer=document.getElementById('cart-footer');if(!cart.length){list.innerHTML=`<div class="cart-empty-msg"><span>🛒</span>Seu carrinho está vazio.</div>`;footer.style.display='none';return;}const total=cart.reduce((s,i)=>s+i.preco*i.qty,0);list.innerHTML=cart.map((item,idx)=>`<div class="cart-item-row"><div class="cart-item-emoji">${item.emoji}</div><div class="cart-item-info"><div class="cart-item-name">${item.nome}</div>${item.obs?`<div class="cart-item-obs">📝 ${item.obs}</div>`:''}<div class="cart-item-qty">${item.qty}x — R$ ${item.preco.toFixed(2).replace('.',',')}/un</div></div><div class="cart-item-right"><div class="cart-item-price">R$ ${(item.preco*item.qty).toFixed(2).replace('.',',')}</div><button class="cart-del-btn" onclick="removeFromCart(${idx})" title="Remover item">🗑️</button></div></div>`).join('');document.getElementById('cart-total-modal').textContent=`R$ ${total.toFixed(2).replace('.',',')}`;footer.style.display='block';}
+let _entrega='Delivery',_pagamento='PIX';
+function pedirWpp(){if(!cart.length)return;closeCartModal();document.getElementById('co-nome').value='';document.getElementById('co-tel').value='';document.getElementById('co-addr').value='';_entrega='Delivery';_pagamento='PIX';document.querySelectorAll('.co-opt').forEach((el,i)=>el.classList.toggle('on',i===0));document.querySelectorAll('.co-pgto-opt').forEach((el,i)=>el.classList.toggle('on',i===0));document.getElementById('co-addr-wrap').style.display='block';document.getElementById('checkout-bg').classList.add('open');document.body.style.overflow='hidden';setTimeout(()=>document.getElementById('co-nome').focus(),300);}
+function closeCheckout(){document.getElementById('checkout-bg').classList.remove('open');document.body.style.overflow='';}
+function selEntrega(el,val){_entrega=val;document.querySelectorAll('.co-opt').forEach(e=>e.classList.remove('on'));el.classList.add('on');document.getElementById('co-addr-wrap').style.display=val==='Delivery'?'block':'none';}
+function selPgto(el,val){_pagamento=val;document.querySelectorAll('.co-pgto-opt').forEach(e=>e.classList.remove('on'));el.classList.add('on');}
+async function confirmarPedido(){const nome=document.getElementById('co-nome').value.trim();const tel=document.getElementById('co-tel').value.trim();const addr=document.getElementById('co-addr').value.trim();if(!nome){document.getElementById('co-nome').focus();showToast('⚠️ Informe seu nome');return;}if(!tel){document.getElementById('co-tel').focus();showToast('⚠️ Informe seu telefone');return;}if(_entrega==='Delivery'&&!addr){document.getElementById('co-addr').focus();showToast('⚠️ Informe o endereço');return;}const lines=cart.map(i=>{let l=`• ${i.qty}x ${i.nome} — R$ ${(i.preco*i.qty).toFixed(2).replace('.',',')}`;if(i.obs)l+=` (${i.obs})`;return l;});const total=cart.reduce((s,i)=>s+i.preco*i.qty,0);const totalFmt=total.toFixed(2).replace('.',',');const itensStr=cart.map(i=>`${i.qty}x ${i.nome}${i.obs?' ('+i.obs+')':''}`).join(', ');const entregaStr=_entrega==='Delivery'?`Delivery — ${addr}`:'Retirada no local';const btn=document.getElementById('co-btn');const spin=document.getElementById('co-spin');const txt=document.getElementById('co-btn-txt');btn.disabled=true;spin.style.display='block';txt.textContent='Registrando pedido...';let pedidoSalvo=false;if(CLIENT_URL&&CLIENT_KEY&&!DEMO_MODE){try{const payload={slug:SLUG,cliente_nome:nome,telefone:tel,itens:itensStr,total:total,pagamento:_pagamento,entrega:entregaStr,status:'novo',observacao:''};const resp=await fetch(`${CLIENT_URL}/rest/v1/pedidos`,{method:'POST',headers:{'apikey':CLIENT_KEY,'Authorization':'Bearer '+CLIENT_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify(payload)});if(resp.ok||resp.status===201)pedidoSalvo=true;}catch(e){console.warn('Erro ao salvar pedido:',e);}}
+const wppLines=[`🍔 *Novo pedido — ${NOME}*`,'',`👤 *${nome}* |  📞 ${tel}`,`🚚 ${entregaStr}`,`💳 Pagamento: ${_pagamento}`,'', ...lines,'',`*TOTAL: R$ ${totalFmt}*`,'',pedidoSalvo?`_✅ Pedido registrado automaticamente no sistema_`:`_Pedido via BurgerOps Pro_`];const msg=wppLines.join('\n');btn.disabled=false;spin.style.display='none';txt.textContent='💬 Confirmar e enviar pelo WhatsApp';closeCheckout();cart=[];updCart();showToast(pedidoSalvo?'✅ Pedido enviado ao sistema!':'📲 Redirecionando para WhatsApp...');if(WPP_NUM)window.open(`https://wa.me/${WPP_NUM}?text=${encodeURIComponent(msg)}`,'_blank');}
+let tTimer;
+function showToast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');clearTimeout(tTimer);tTimer=setTimeout(()=>el.classList.remove('show'),2200);}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeSheet();closeCartModal();}});
+boot();
+</script>
+</body>
+</html>
