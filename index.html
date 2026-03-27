@@ -294,19 +294,41 @@ let CL_URL = '', CL_KEY = '', SLUG = '', EMPRESA = '', WPP = '';
 let items = [], catAtiva = '', q = '', cart = [], mQty = 1, mItem = null;
 
 // ── BOOT ────────────────────────────────────────────────────
+function hideLoading() {
+  const l = document.getElementById('loading');
+  if (!l) return;
+  l.classList.add('hide');
+  setTimeout(() => l.remove(), 500);
+}
+
 async function boot() {
   const p = new URLSearchParams(location.search);
   SLUG = p.get('slug') || '';
-  if (!SLUG) { erro('Informe o slug na URL: ?slug=seu-restaurante'); return; }
+
+  if (!SLUG) {
+    erro('Informe o slug na URL: <br><code style="color:var(--gold)">?slug=seu-restaurante</code>');
+    hideLoading();
+    return;
+  }
+
+  const timeoutId = setTimeout(() => {
+    erro('Tempo esgotado ao carregar o cardápio.<br>Verifique sua conexão e tente novamente.');
+    hideLoading();
+  }, 10000);
 
   try {
     const r = await fetch(
       `${MASTER_URL}/rest/v1/config_clientes?slug=eq.${encodeURIComponent(SLUG)}&select=*`,
       { headers:{ apikey: MASTER_KEY, Authorization: 'Bearer '+MASTER_KEY } }
     );
-    if (!r.ok) throw new Error('Erro ao buscar configuração');
+    if (!r.ok) throw new Error('Erro ao buscar configuração do restaurante (HTTP ' + r.status + ')');
     const rows = await r.json();
-    if (!rows.length) { erro('Restaurante não encontrado para o slug "'+SLUG+'"'); return; }
+    if (!rows.length) {
+      clearTimeout(timeoutId);
+      erro('Restaurante "<strong>' + SLUG + '</strong>" não encontrado.<br>Verifique o slug na URL.');
+      hideLoading();
+      return;
+    }
 
     const cfg = rows[0];
     CL_URL  = cfg.cliente_supabase_url.trim().replace(/\/$/,'');
@@ -321,13 +343,13 @@ async function boot() {
       `<strong style="color:var(--gold)">${EMPRESA}</strong> · Powered by BurgerOps Pro`;
 
     await loadMenu();
-  } catch(e) { erro(e.message); }
+    clearTimeout(timeoutId);
+  } catch(e) {
+    clearTimeout(timeoutId);
+    erro(e.message);
+  }
 
-  setTimeout(()=>{
-    const l=document.getElementById('loading');
-    l.classList.add('hide');
-    setTimeout(()=>l.remove(),500);
-  }, 700);
+  hideLoading();
 }
 
 async function loadMenu() {
@@ -597,4 +619,39 @@ async function sendOrder() {
   syncFab();
   closeOv('ov-cart');
   toast('✅ Pedido registrado e enviado pelo WhatsApp!');
-  ['fn','ftel','fend','fmesa','fpgto','fobs'].forEach(id=>{
+  ['fn','ftel','fend','fmesa','fpgto','fobs'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  document.getElementById('fentr').value='';
+  entrgChange('');
+}
+
+// ── MODAL HELPERS ────────────────────────────────────────────
+function openOv(id)  { document.getElementById(id).classList.add('open'); document.body.style.overflow='hidden'; }
+function closeOv(id) { document.getElementById(id).classList.remove('open'); document.body.style.overflow=''; }
+function bgClose(e,id) { if(e.target===document.getElementById(id)) closeOv(id); }
+
+document.addEventListener('keydown', e => {
+  if(e.key==='Escape') { closeOv('ov-cart'); closeOv('ov-prod'); }
+});
+
+// ── TOAST ────────────────────────────────────────────────────
+function toast(msg, err=false) {
+  const el = document.createElement('div');
+  el.className = 'ti';
+  el.style.borderLeftColor = err ? '#e63946' : '#f5a623';
+  el.textContent = msg;
+  document.getElementById('tc').appendChild(el);
+  setTimeout(()=>el.remove(), 2600);
+}
+
+// ── ERRO ─────────────────────────────────────────────────────
+function erro(msg) {
+  document.getElementById('mc').innerHTML =
+    `<div class="empty fi"><div class="empty-icon">⚠️</div><div class="empty-txt" style="color:var(--red)">${msg}</div></div>`;
+  const l=document.getElementById('loading');
+  l.classList.add('hide'); setTimeout(()=>l.remove(),500);
+}
+
+boot();
+</script>
+</body>
+</html>
