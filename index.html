@@ -552,23 +552,21 @@ async function sendOrder() {
   const tot = cart.reduce((s,c)=>s+c.i.preco*c.qty,0);
 
   // ── SALVAR NO SUPABASE DO CLIENTE ──────────────────────────
+  const itensTexto = cart.map(c =>
+    `${c.qty}x ${c.i.nome} — R$ ${(c.i.preco * c.qty).toFixed(2)}`
+  ).join(', ');
+
   const pedido = {
     slug: SLUG,
     empresa: EMPRESA,
     cliente_nome: nome,
-    cliente_tel: tel || null,
+    telefone: tel || null,
     tipo_entrega: entr,
     endereco: entr==='Delivery' ? end : null,
     mesa: entr==='Mesa (Local)' ? mesa : null,
     pagamento: pgto || null,
     observacoes: obs || null,
-    itens: cart.map(c => ({
-      id: c.i.id,
-      nome: c.i.nome,
-      quantidade: c.qty,
-      preco_unit: c.i.preco,
-      subtotal: +(c.i.preco * c.qty).toFixed(2)
-    })),
+    itens: itensTexto,
     total: +tot.toFixed(2),
     status: 'novo'
   };
