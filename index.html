@@ -679,42 +679,58 @@ function renderCheckout() {
   wrap.style.display = 'block';
 }
 
+async function geocodificar(endereco) {
+  // Nominatim (OpenStreetMap) — gratuito, sem chave
+  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(endereco)}&format=json&limit=1&countrycodes=br`;
+  const r = await fetch(url, { headers: { 'Accept-Language': 'pt-BR', 'User-Agent': 'BurgerOps/1.0' } });
+  const data = await r.json();
+  if (!data.length) throw new Error('Endereço não encontrado. Tente incluir cidade e estado.');
+  return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
+}
+
 async function calcularFrete() {
   const rua    = document.getElementById('fend-rua').value.trim();
   const num    = document.getElementById('fend-num').value.trim();
   const bairro = document.getElementById('fend-bairro').value.trim();
   const cidade = document.getElementById('fend-cidade').value.trim();
   const end    = [rua, num, bairro, cidade].filter(Boolean).join(', ');
-  const res = document.getElementById('frete-result');
+  const res    = document.getElementById('frete-result');
+
   if (!rua || !cidade) { toast('⚠️ Preencha pelo menos rua e cidade!', true); return; }
-  if (!freteConfig || !freteConfig.apikey) {
-    // Sem config: mostrar aviso e deixar continuar sem frete
+
+  if (!freteConfig || !freteConfig.graphKey || !freteConfig.origemLat) {
     res.className = 'frete-result err'; res.style.display = 'block';
     res.textContent = 'Frete não configurado. O valor será combinado na entrega.';
     freteValor = 0; atualizarTotalComFrete(); return;
   }
+
   res.className = 'frete-result'; res.style.display = 'block';
-  res.textContent = '⏳ Calculando...';
+  res.textContent = '⏳ Calculando distância...';
+
   try {
-    const origem  = encodeURIComponent(freteConfig.origem);
-    const destino = encodeURIComponent(end + ', Brasil');
-    const url = `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${origem}&destinations=${destino}&mode=driving&language=pt-BR&key=${freteConfig.apikey}`;
-    // Usar proxy CORS-anywhere ou backend — como não temos, usar endpoint via callback
-    const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
-    const r = await fetch(proxyUrl);
+    // 1. Geocodificar endereço do cliente via Nominatim
+    const coord = await geocodificar(end + ', Brasil');
+
+    // 2. Calcular rota via GraphHopper
+    const ghUrl = `https://graphhopper.com/api/1/route?point=${freteConfig.origemLat},${freteConfig.origemLon}&point=${coord.lat},${coord.lon}&profile=car&locale=pt&calc_points=false&key=${freteConfig.graphKey}`;
+    const r = await fetch(ghUrl);
     const data = await r.json();
-    const el = data?.rows?.[0]?.elements?.[0];
-    if (!el || el.status !== 'OK') throw new Error('Endereço não encontrado');
-    const distKm = el.distance.value / 1000;
-    const raio = freteConfig.raio || 999;
+
+    if (!data.paths || !data.paths[0]) throw new Error('Rota não encontrada para este endereço.');
+
+    const distKm = data.paths[0].distance / 1000;
+    const raio   = freteConfig.raio || 999;
+
     if (distKm > raio) {
       res.className = 'frete-result err'; res.style.display = 'block';
       res.textContent = `❌ Fora da área de entrega (máx. ${raio}km). Distância: ${distKm.toFixed(1)}km`;
       freteValor = -1; return;
     }
-    const tot = cart.reduce((s,c) => s + c.i.preco * c.qty, 0);
-    const gratis = freteConfig.gratis || 0;
-    if (gratis > 0 && tot >= gratis) {
+
+    const subtotal = cart.reduce((s,c) => s + c.i.preco * c.qty, 0);
+    const gratis   = freteConfig.gratis || 0;
+
+    if (gratis > 0 && subtotal >= gratis) {
       freteValor = 0;
       res.className = 'frete-result free'; res.style.display = 'block';
       res.textContent = `🎉 Frete GRÁTIS! Distância: ${distKm.toFixed(1)}km`;
@@ -727,7 +743,7 @@ async function calcularFrete() {
     renderCheckout();
   } catch(e) {
     res.className = 'frete-result err'; res.style.display = 'block';
-    res.textContent = 'Erro ao calcular frete. Verifique o endereço.';
+    res.textContent = `Erro: ${e.message}`;
     freteValor = 0;
   }
 }
