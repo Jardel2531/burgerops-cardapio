@@ -226,7 +226,10 @@ select.inp{cursor:pointer;}
   <div class="panel">
     <div class="ph">
       <div class="ph-title">🛒 Seu Pedido</div>
-      <button class="x-btn" onclick="closeOv('ov-cart')">✕</button>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button class="x-btn" onclick="esvaziarCart()" title="Esvaziar carrinho" style="font-size:13px">🗑️</button>
+        <button class="x-btn" onclick="closeOv('ov-cart')">✕</button>
+      </div>
     </div>
     <div class="cart-body" id="ci-list"></div>
     <div class="oform" id="oform">
@@ -359,6 +362,13 @@ async function loadMenu() {
   );
   if (!r.ok) throw new Error(await r.text());
   items = await r.json();
+  // Marcar itens do carrinho como indisponíveis se mudaram no SaaS
+  cart = cart.filter(c => {
+    const updated = items.find(i => i.id === c.i.id);
+    if (updated) c.i = updated;
+    return updated && updated.status === 'disponivel';
+  });
+  syncFab();
 
   // categorias
   const cats = [...new Set(items.map(i=>i.categoria).filter(Boolean))];
@@ -526,6 +536,14 @@ function renderCart() {
 }
 
 function openCart() { renderCart(); openOv('ov-cart'); }
+function esvaziarCart() {
+  if (!cart.length) return;
+  if (!confirm('Esvaziar o carrinho?')) return;
+  cart = [];
+  syncFab();
+  renderCart();
+  toast('🗑️ Carrinho esvaziado!');
+}
 
 // ── ENTREGA ──────────────────────────────────────────────────
 function entrgChange(v) {
@@ -657,6 +675,11 @@ function erro(msg) {
 }
 
 boot();
+// Atualiza o menu a cada 60s para refletir mudanças de disponibilidade feitas no SaaS
+setInterval(async () => {
+  if (!CL_URL || !CL_KEY) return;
+  try { await loadMenu(); render(); } catch(e) {}
+}, 60000);
 </script>
 </body>
 </html>
