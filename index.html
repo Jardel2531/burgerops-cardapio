@@ -154,6 +154,19 @@ select.inp{cursor:pointer;}
 /* FOOTER */
 .foot{text-align:center;padding:18px;font-size:11px;color:var(--text2);border-top:1px solid var(--border);}
 
+/* FRETE */
+.frete-box{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:12px;}
+.frete-row{display:flex;align-items:center;gap:8px;}
+.frete-inp{flex:1;background:var(--bg2);border:1px solid var(--border);color:var(--text);font-family:'Nunito';font-size:13px;font-weight:600;border-radius:8px;padding:9px 12px;outline:none;transition:border-color .2s;}
+.frete-inp:focus{border-color:var(--gold);}
+.frete-inp::placeholder{color:var(--text2);}
+.frete-btn{background:var(--gold);color:#000;border:none;border-radius:8px;padding:9px 14px;font-family:'Nunito';font-size:12px;font-weight:900;cursor:pointer;white-space:nowrap;transition:all .15s;}
+.frete-btn:hover{background:var(--gold2);}
+.frete-result{margin-top:8px;font-size:12px;font-weight:700;display:none;}
+.frete-result.ok{color:var(--green);}
+.frete-result.err{color:var(--red);}
+.frete-result.free{color:var(--gold);}
+
 /* FADE */
 .fi{animation:fi .35s ease both;}
 @keyframes fi{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
@@ -234,8 +247,12 @@ select.inp{cursor:pointer;}
     <div class="cart-body" id="ci-list"></div>
     <div class="oform" id="oform">
       <div class="total-row">
-        <span class="total-lbl">Total</span>
+        <span class="total-lbl">Subtotal</span>
         <span class="total-val" id="tot-val">R$ 0,00</span>
+      </div>
+      <div id="frete-breakdown" style="display:none;align-items:center;justify-content:space-between;padding:6px 16px;margin-bottom:8px;">
+        <span style="font-size:12px;color:var(--text2);font-weight:700">🛵 Frete</span>
+        <span style="font-size:13px;font-weight:800;color:var(--gold)" id="frete-val-display"></span>
       </div>
 
       <label class="lbl">Seu nome *</label>
@@ -254,7 +271,13 @@ select.inp{cursor:pointer;}
 
       <div id="g-end" style="display:none">
         <label class="lbl">📍 Endereço *</label>
-        <input class="inp" id="fend" placeholder="Rua, número, bairro...">
+        <div class="frete-box">
+          <div class="frete-row">
+            <input class="frete-inp" id="fend" placeholder="Rua, número, bairro, cidade...">
+            <button class="frete-btn" onclick="calcularFrete()">📏 Calcular frete</button>
+          </div>
+          <div class="frete-result" id="frete-result"></div>
+        </div>
       </div>
       <div id="g-mesa" style="display:none">
         <label class="lbl">🪑 Número da Mesa *</label>
@@ -295,6 +318,7 @@ const MASTER_KEY = 'sb_publishable_8Q0er9mtHSWAPOXYYec87g_8IuDxPIj';
 
 let CL_URL = '', CL_KEY = '', SLUG = '', EMPRESA = '', WPP = '';
 let items = [], catAtiva = '', q = '', cart = [], mQty = 1, mItem = null;
+let freteConfig = null, freteValor = 0;
 
 // ── BOOT ────────────────────────────────────────────────────
 function hideLoading() {
@@ -339,6 +363,12 @@ async function boot() {
     EMPRESA = cfg.nome_empresa || 'Meu Restaurante';
     WPP     = (cfg.whatsapp || '').replace(/\D/g,'');
 
+    // Carregar config de frete salva no localStorage do SaaS (se disponível no mesmo domínio)
+    // Como cardápio e SaaS são domínios distintos, buscamos config de frete da tabela config_clientes
+    try {
+      const fc = cfg.frete ? JSON.parse(cfg.frete) : null;
+      if (fc && fc.km) freteConfig = fc;
+    } catch(e) {}
     document.getElementById('bname').textContent = EMPRESA;
     document.getElementById('bsub').textContent  = '@' + SLUG;
     document.title = `Cardápio — ${EMPRESA}`;
@@ -498,7 +528,8 @@ function cQty(id,d)  {
   syncFab(); renderCart();
 }
 function syncFab() {
-  const tot = cart.reduce((s,c)=>s+c.i.preco*c.qty,0);
+  const subtotal = cart.reduce((s,c)=>s+c.i.preco*c.qty,0);
+  const tot = subtotal + (freteValor > 0 ? freteValor : 0);
   const cnt = cart.reduce((s,c)=>s+c.qty,0);
   document.getElementById('fab-n').textContent = cnt;
   document.getElementById('fab-txt').textContent = `Ver carrinho · R$ ${tot.toFixed(2)}`;
@@ -513,7 +544,8 @@ function renderCart() {
     of.style.display = 'none'; return;
   }
   of.style.display = 'block';
-  const tot = cart.reduce((s,c)=>s+c.i.preco*c.qty,0);
+  const subtotal = cart.reduce((s,c)=>s+c.i.preco*c.qty,0);
+  const tot = subtotal + (freteValor > 0 ? freteValor : 0);
   document.getElementById('tot-val').textContent = `R$ ${tot.toFixed(2)}`;
   el.innerHTML = cart.map(c => {
     const img = c.i.imagem_url
@@ -536,6 +568,70 @@ function renderCart() {
 }
 
 function openCart() { renderCart(); openOv('ov-cart'); }
+
+async function calcularFrete() {
+  const end = document.getElementById('fend').value.trim();
+  const res = document.getElementById('frete-result');
+  if (!end) { toast('⚠️ Digite o endereço primeiro!', true); return; }
+  if (!freteConfig || !freteConfig.apikey) {
+    // Sem config: mostrar aviso e deixar continuar sem frete
+    res.className = 'frete-result err'; res.style.display = 'block';
+    res.textContent = 'Frete não configurado. O valor será combinado na entrega.';
+    freteValor = 0; atualizarTotalComFrete(); return;
+  }
+  res.className = 'frete-result'; res.style.display = 'block';
+  res.textContent = '⏳ Calculando...';
+  try {
+    const origem  = encodeURIComponent(freteConfig.origem);
+    const destino = encodeURIComponent(end + ', Brasil');
+    const url = `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${origem}&destinations=${destino}&mode=driving&language=pt-BR&key=${freteConfig.apikey}`;
+    // Usar proxy CORS-anywhere ou backend — como não temos, usar endpoint via callback
+    const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
+    const r = await fetch(proxyUrl);
+    const data = await r.json();
+    const el = data?.rows?.[0]?.elements?.[0];
+    if (!el || el.status !== 'OK') throw new Error('Endereço não encontrado');
+    const distKm = el.distance.value / 1000;
+    const raio = freteConfig.raio || 999;
+    if (distKm > raio) {
+      res.className = 'frete-result err'; res.style.display = 'block';
+      res.textContent = `❌ Fora da área de entrega (máx. ${raio}km). Distância: ${distKm.toFixed(1)}km`;
+      freteValor = -1; return;
+    }
+    const tot = cart.reduce((s,c) => s + c.i.preco * c.qty, 0);
+    const gratis = freteConfig.gratis || 0;
+    if (gratis > 0 && tot >= gratis) {
+      freteValor = 0;
+      res.className = 'frete-result free'; res.style.display = 'block';
+      res.textContent = `🎉 Frete GRÁTIS! Distância: ${distKm.toFixed(1)}km`;
+    } else {
+      freteValor = +(distKm * freteConfig.km).toFixed(2);
+      res.className = 'frete-result ok'; res.style.display = 'block';
+      res.textContent = `📍 ${distKm.toFixed(1)}km — Frete: R$ ${freteValor.toFixed(2)}`;
+    }
+    atualizarTotalComFrete();
+  } catch(e) {
+    res.className = 'frete-result err'; res.style.display = 'block';
+    res.textContent = 'Erro ao calcular frete. Verifique o endereço.';
+    freteValor = 0;
+  }
+}
+
+function atualizarTotalComFrete() {
+  const tot = cart.reduce((s,c) => s + c.i.preco * c.qty, 0);
+  const totalFinal = tot + (freteValor > 0 ? freteValor : 0);
+  document.getElementById('tot-val').textContent = `R$ ${totalFinal.toFixed(2)}`;
+  // Mostrar breakdown se há frete
+  const row = document.getElementById('frete-breakdown');
+  if (row) {
+    if (freteValor > 0) {
+      row.style.display = 'flex';
+      document.getElementById('frete-val-display').textContent = `+ R$ ${freteValor.toFixed(2)}`;
+    } else {
+      row.style.display = 'none';
+    }
+  }
+}
 function esvaziarCart() {
   if (!cart.length) return;
   if (!confirm('Esvaziar o carrinho?')) return;
@@ -567,7 +663,8 @@ async function sendOrder() {
   if (entr==='Mesa (Local)' && !mesa)    { toast('⚠️ Informe a mesa!',true); return; }
   if (!cart.length) { toast('⚠️ Carrinho vazio!',true); return; }
 
-  const tot = cart.reduce((s,c)=>s+c.i.preco*c.qty,0);
+  const subtotal = cart.reduce((s,c)=>s+c.i.preco*c.qty,0);
+  const tot = subtotal + (freteValor > 0 ? freteValor : 0);
 
   // ── SALVAR NO SUPABASE DO CLIENTE ──────────────────────────
   const itensTexto = cart.map(c =>
@@ -585,6 +682,8 @@ async function sendOrder() {
     pagamento: pgto || null,
     observacoes: obs || null,
     itens: itensTexto,
+    subtotal: +subtotal.toFixed(2),
+    frete: freteValor > 0 ? +freteValor.toFixed(2) : 0,
     total: +tot.toFixed(2),
     status: 'novo',
     criado_em: new Date().toISOString()
@@ -632,6 +731,7 @@ async function sendOrder() {
     msg += `  • ${c.qty}x ${c.i.nome} — R$ ${(c.i.preco*c.qty).toFixed(2)}\n`;
   });
   msg += `━━━━━━━━━━━━━━\n`;
+  if (freteValor > 0) msg += `🛵 *Frete: R$ ${freteValor.toFixed(2)}*\n`;
   msg += `💰 *TOTAL: R$ ${tot.toFixed(2)}*\n`;
   if (obs) msg += `📝 *Obs:* ${obs}`;
 
@@ -645,6 +745,9 @@ async function sendOrder() {
   ['fn','ftel','fend','fmesa','fpgto','fobs'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
   document.getElementById('fentr').value='';
   entrgChange('');
+  freteValor = 0;
+  const fr = document.getElementById('frete-result'); if(fr) { fr.style.display='none'; fr.textContent=''; }
+  const fb = document.getElementById('frete-breakdown'); if(fb) fb.style.display='none';
 }
 
 // ── MODAL HELPERS ────────────────────────────────────────────
