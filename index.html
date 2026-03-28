@@ -835,8 +835,6 @@ async function sendOrder() {
     pagamento: pgto || null,
     observacoes: obs || null,
     itens: itensTexto,
-    subtotal: +subtotal.toFixed(2),
-    frete: freteValor > 0 ? +freteValor.toFixed(2) : 0,
     total: +tot.toFixed(2),
     status: 'novo',
     criado_em: new Date().toISOString()
