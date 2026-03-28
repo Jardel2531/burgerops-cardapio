@@ -154,6 +154,27 @@ select.inp{cursor:pointer;}
 /* FOOTER */
 .foot{text-align:center;padding:18px;font-size:11px;color:var(--text2);border-top:1px solid var(--border);}
 
+/* CHECKOUT RESUMO */
+.checkout-resumo{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:14px;}
+.checkout-titulo{font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:var(--text2);margin-bottom:10px;}
+.checkout-item{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border);font-size:13px;}
+.checkout-item:last-child{border-bottom:none;}
+.checkout-item-nome{font-weight:700;color:var(--text);}
+.checkout-item-qty{font-size:11px;color:var(--text2);margin-left:6px;}
+.checkout-item-preco{font-weight:800;color:var(--text);font-family:'Bebas Neue';font-size:16px;letter-spacing:.5px;}
+.checkout-divider{border:none;border-top:1px solid var(--border);margin:10px 0;}
+.checkout-linha{display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:13px;}
+.checkout-linha.total{margin-top:6px;padding-top:10px;border-top:2px solid var(--border);}
+.checkout-linha.total .checkout-lbl{font-weight:900;font-size:14px;color:var(--text);}
+.checkout-linha.total .checkout-vlr{font-family:'Bebas Neue';font-size:24px;color:var(--green);letter-spacing:.5px;}
+.checkout-lbl{color:var(--text2);font-weight:700;}
+.checkout-vlr{font-weight:800;color:var(--text);}
+.checkout-vlr.gratis{color:var(--green);}
+.checkout-info{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:14px;}
+.checkout-info-row{display:flex;gap:8px;align-items:flex-start;font-size:12px;padding:3px 0;}
+.checkout-info-lbl{color:var(--text2);font-weight:700;min-width:72px;}
+.checkout-info-val{color:var(--text);font-weight:600;}
+
 /* FRETE */
 .frete-box{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:12px;}
 .frete-row{display:flex;align-items:center;gap:8px;}
@@ -256,13 +277,13 @@ select.inp{cursor:pointer;}
       </div>
 
       <label class="lbl">Seu nome *</label>
-      <input class="inp" id="fn" placeholder="João Silva">
+      <input class="inp" id="fn" placeholder="João Silva" oninput="renderCheckout()">
 
       <label class="lbl">WhatsApp *</label>
-      <input class="inp" id="ftel" type="tel" placeholder="(11) 99999-9999">
+      <input class="inp" id="ftel" type="tel" placeholder="(11) 99999-9999" oninput="renderCheckout()">
 
       <label class="lbl">Tipo de entrega *</label>
-      <select class="inp" id="fentr" onchange="entrgChange(this.value)">
+      <select class="inp" id="fentr" onchange="entrgChange(this.value);renderCheckout()">
         <option value="">Selecione...</option>
         <option value="Delivery">🛵 Delivery</option>
         <option value="Retirada no Balcão">🏠 Retirada no Balcão</option>
@@ -272,8 +293,13 @@ select.inp{cursor:pointer;}
       <div id="g-end" style="display:none">
         <label class="lbl">📍 Endereço *</label>
         <div class="frete-box">
+          <input class="frete-inp" id="fend-rua" placeholder="Rua / Avenida..." style="margin-bottom:7px;width:100%">
+          <div style="display:flex;gap:7px;margin-bottom:7px">
+            <input class="frete-inp" id="fend-num" placeholder="Número" style="width:90px;flex-shrink:0">
+            <input class="frete-inp" id="fend-bairro" placeholder="Bairro" style="flex:1">
+          </div>
           <div class="frete-row">
-            <input class="frete-inp" id="fend" placeholder="Rua, número, bairro, cidade...">
+            <input class="frete-inp" id="fend-cidade" placeholder="Cidade - UF" style="flex:1">
             <button class="frete-btn" onclick="calcularFrete()">📏 Calcular frete</button>
           </div>
           <div class="frete-result" id="frete-result"></div>
@@ -285,14 +311,27 @@ select.inp{cursor:pointer;}
       </div>
 
       <label class="lbl">Pagamento</label>
-      <select class="inp" id="fpgto">
+      <select class="inp" id="fpgto" onchange="renderCheckout()">
         <option value="">Selecione...</option>
         <option>PIX</option><option>Dinheiro</option>
         <option>Cartão de Crédito</option><option>Cartão de Débito</option>
       </select>
 
       <label class="lbl">Observações</label>
-      <input class="inp" id="fobs" placeholder="Sem cebola, ponto da carne...">
+      <input class="inp" id="fobs" placeholder="Sem cebola, ponto da carne..." oninput="renderCheckout()">
+
+      <!-- RESUMO DO CHECKOUT -->
+      <div id="checkout-resumo-wrap" style="display:none">
+        <div class="checkout-resumo">
+          <div class="checkout-titulo">📋 Resumo do Pedido</div>
+          <div id="checkout-itens"></div>
+          <div id="checkout-totais"></div>
+        </div>
+        <div class="checkout-info" id="checkout-info" style="display:none">
+          <div class="checkout-titulo">📝 Dados do Pedido</div>
+          <div id="checkout-dados"></div>
+        </div>
+      </div>
 
       <button class="wpp-btn" onclick="sendOrder()">
         <svg class="wpp-icon" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M11.999 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2.05 22l4.926-1.367A9.945 9.945 0 0012 22c5.523 0 10-4.477 10-10S17.523 2 12 2z"/></svg>
@@ -567,12 +606,87 @@ function renderCart() {
   }).join('');
 }
 
-function openCart() { renderCart(); openOv('ov-cart'); }
+function openCart() { renderCart(); openOv('ov-cart'); setTimeout(renderCheckout, 50); }
+
+function renderCheckout() {
+  const wrap = document.getElementById('checkout-resumo-wrap');
+  if (!wrap || !cart.length) return;
+
+  // ── Itens ──
+  const itensEl = document.getElementById('checkout-itens');
+  itensEl.innerHTML = cart.map(c => `
+    <div class="checkout-item">
+      <span>
+        <span class="checkout-item-nome">${c.i.nome}</span>
+        <span class="checkout-item-qty">x${c.qty}</span>
+      </span>
+      <span class="checkout-item-preco">R$ ${(c.i.preco * c.qty).toFixed(2)}</span>
+    </div>`).join('');
+
+  // ── Totais ──
+  const subtotal = cart.reduce((s,c) => s + c.i.preco * c.qty, 0);
+  const frete    = freteValor > 0 ? freteValor : 0;
+  const total    = subtotal + frete;
+  const totaisEl = document.getElementById('checkout-totais');
+  totaisEl.innerHTML = `
+    <div class="checkout-divider"></div>
+    <div class="checkout-linha">
+      <span class="checkout-lbl">Subtotal</span>
+      <span class="checkout-vlr">R$ ${subtotal.toFixed(2)}</span>
+    </div>
+    ${freteValor > 0 ? `<div class="checkout-linha">
+      <span class="checkout-lbl">🛵 Frete</span>
+      <span class="checkout-vlr">R$ ${frete.toFixed(2)}</span>
+    </div>` : freteValor === 0 && document.getElementById('g-end').style.display !== 'none' ? `<div class="checkout-linha">
+      <span class="checkout-lbl">🛵 Frete</span>
+      <span class="checkout-vlr gratis">Grátis</span>
+    </div>` : ''}
+    <div class="checkout-linha total">
+      <span class="checkout-lbl">Total</span>
+      <span class="checkout-vlr" style="font-family:'Bebas Neue';font-size:24px;color:var(--green)">R$ ${total.toFixed(2)}</span>
+    </div>`;
+
+  // ── Dados do pedido ──
+  const nome  = document.getElementById('fn').value.trim();
+  const tel   = document.getElementById('ftel').value.trim();
+  const entr  = document.getElementById('fentr').value;
+  const rua_    = (document.getElementById('fend-rua')?.value||'').trim();
+  const num_    = (document.getElementById('fend-num')?.value||'').trim();
+  const bairro_ = (document.getElementById('fend-bairro')?.value||'').trim();
+  const cidade_ = (document.getElementById('fend-cidade')?.value||'').trim();
+  const end     = [rua_, num_, bairro_, cidade_].filter(Boolean).join(', ');
+  const mesa  = document.getElementById('fmesa').value.trim();
+  const pgto  = document.getElementById('fpgto').value;
+  const obs   = document.getElementById('fobs').value.trim();
+  const infoEl = document.getElementById('checkout-info');
+  const dadosEl = document.getElementById('checkout-dados');
+
+  if (nome || entr || pgto) {
+    infoEl.style.display = 'block';
+    dadosEl.innerHTML = [
+      nome  ? `<div class="checkout-info-row"><span class="checkout-info-lbl">👤 Nome</span><span class="checkout-info-val">${nome}</span></div>` : '',
+      tel   ? `<div class="checkout-info-row"><span class="checkout-info-lbl">📞 WhatsApp</span><span class="checkout-info-val">${tel}</span></div>` : '',
+      entr  ? `<div class="checkout-info-row"><span class="checkout-info-lbl">🛵 Entrega</span><span class="checkout-info-val">${entr}</span></div>` : '',
+      end   ? `<div class="checkout-info-row"><span class="checkout-info-lbl">📍 Endereço</span><span class="checkout-info-val">${end}</span></div>` : '',
+      mesa  ? `<div class="checkout-info-row"><span class="checkout-info-lbl">🪑 Mesa</span><span class="checkout-info-val">${mesa}</span></div>` : '',
+      pgto  ? `<div class="checkout-info-row"><span class="checkout-info-lbl">💳 Pagamento</span><span class="checkout-info-val">${pgto}</span></div>` : '',
+      obs   ? `<div class="checkout-info-row"><span class="checkout-info-lbl">📝 Obs</span><span class="checkout-info-val">${obs}</span></div>` : '',
+    ].join('');
+  } else {
+    infoEl.style.display = 'none';
+  }
+
+  wrap.style.display = 'block';
+}
 
 async function calcularFrete() {
-  const end = document.getElementById('fend').value.trim();
+  const rua    = document.getElementById('fend-rua').value.trim();
+  const num    = document.getElementById('fend-num').value.trim();
+  const bairro = document.getElementById('fend-bairro').value.trim();
+  const cidade = document.getElementById('fend-cidade').value.trim();
+  const end    = [rua, num, bairro, cidade].filter(Boolean).join(', ');
   const res = document.getElementById('frete-result');
-  if (!end) { toast('⚠️ Digite o endereço primeiro!', true); return; }
+  if (!rua || !cidade) { toast('⚠️ Preencha pelo menos rua e cidade!', true); return; }
   if (!freteConfig || !freteConfig.apikey) {
     // Sem config: mostrar aviso e deixar continuar sem frete
     res.className = 'frete-result err'; res.style.display = 'block';
@@ -610,6 +724,7 @@ async function calcularFrete() {
       res.textContent = `📍 ${distKm.toFixed(1)}km — Frete: R$ ${freteValor.toFixed(2)}`;
     }
     atualizarTotalComFrete();
+    renderCheckout();
   } catch(e) {
     res.className = 'frete-result err'; res.style.display = 'block';
     res.textContent = 'Erro ao calcular frete. Verifique o endereço.';
@@ -652,14 +767,18 @@ async function sendOrder() {
   const nome  = document.getElementById('fn').value.trim();
   const tel   = document.getElementById('ftel').value.trim();
   const entr  = document.getElementById('fentr').value;
-  const end   = document.getElementById('fend').value.trim();
+  const rua_    = (document.getElementById('fend-rua')?.value||'').trim();
+  const num_    = (document.getElementById('fend-num')?.value||'').trim();
+  const bairro_ = (document.getElementById('fend-bairro')?.value||'').trim();
+  const cidade_ = (document.getElementById('fend-cidade')?.value||'').trim();
+  const end     = [rua_, num_, bairro_, cidade_].filter(Boolean).join(', ');
   const mesa  = document.getElementById('fmesa').value.trim();
   const pgto  = document.getElementById('fpgto').value;
   const obs   = document.getElementById('fobs').value.trim();
 
   if (!nome)  { toast('⚠️ Informe seu nome!',true); return; }
   if (!entr)  { toast('⚠️ Escolha o tipo de entrega!',true); return; }
-  if (entr==='Delivery' && !end)         { toast('⚠️ Informe o endereço!',true); return; }
+  if (entr==='Delivery' && (!rua_ || !cidade_)) { toast('⚠️ Informe rua e cidade!',true); return; }
   if (entr==='Mesa (Local)' && !mesa)    { toast('⚠️ Informe a mesa!',true); return; }
   if (!cart.length) { toast('⚠️ Carrinho vazio!',true); return; }
 
@@ -742,7 +861,7 @@ async function sendOrder() {
   syncFab();
   closeOv('ov-cart');
   toast('✅ Pedido registrado e enviado pelo WhatsApp!');
-  ['fn','ftel','fend','fmesa','fpgto','fobs'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  ['fn','ftel','fend-rua','fend-num','fend-bairro','fend-cidade','fmesa','fpgto','fobs'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
   document.getElementById('fentr').value='';
   entrgChange('');
   freteValor = 0;
