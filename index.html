@@ -568,7 +568,8 @@ async function sendOrder() {
     observacoes: obs || null,
     itens: itensTexto,
     total: +tot.toFixed(2),
-    status: 'novo'
+    status: 'novo',
+    criado_em: new Date().toISOString()
   };
 
   console.log('📦 Enviando pedido para Supabase...');
