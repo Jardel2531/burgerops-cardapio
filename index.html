@@ -357,7 +357,7 @@ const MASTER_KEY = 'sb_publishable_8Q0er9mtHSWAPOXYYec87g_8IuDxPIj';
 
 let CL_URL = '', CL_KEY = '', SLUG = '', EMPRESA = '', WPP = '';
 let items = [], catAtiva = '', q = '', cart = [], mQty = 1, mItem = null;
-let freteConfig = null, freteValor = 0;
+let freteConfig = null, freteValor = 0, freteCalculado = false;
 
 // ── BOOT ────────────────────────────────────────────────────
 function hideLoading() {
@@ -634,12 +634,12 @@ function renderCheckout() {
       <span class="checkout-lbl">Subtotal</span>
       <span class="checkout-vlr">R$ ${subtotal.toFixed(2)}</span>
     </div>
-    ${freteValor > 0 ? `<div class="checkout-linha">
+    ${freteCalculado && freteValor > 0 ? `<div class="checkout-linha">
       <span class="checkout-lbl">🛵 Frete</span>
       <span class="checkout-vlr">R$ ${frete.toFixed(2)}</span>
-    </div>` : freteValor === 0 && document.getElementById('g-end').style.display !== 'none' ? `<div class="checkout-linha">
+    </div>` : freteCalculado && freteValor === 0 ? `<div class="checkout-linha">
       <span class="checkout-lbl">🛵 Frete</span>
-      <span class="checkout-vlr gratis">Grátis</span>
+      <span class="checkout-vlr gratis">Grátis 🎉</span>
     </div>` : ''}
     <div class="checkout-linha total">
       <span class="checkout-lbl">Total</span>
@@ -750,10 +750,12 @@ async function calcularFrete() {
 
     if (gratis > 0 && subtotal >= gratis) {
       freteValor = 0;
+      freteCalculado = true;
       res.className = 'frete-result free'; res.style.display = 'block';
       res.textContent = `🎉 Frete GRÁTIS! Distância: ${distKm.toFixed(1)}km`;
     } else {
       freteValor = +(distKm * freteConfig.km).toFixed(2);
+      freteCalculado = true;
       res.className = 'frete-result ok'; res.style.display = 'block';
       res.textContent = `📍 ${distKm.toFixed(1)}km — Frete: R$ ${freteValor.toFixed(2)}`;
     }
@@ -794,6 +796,7 @@ function esvaziarCart() {
 function entrgChange(v) {
   document.getElementById('g-end').style.display  = v==='Delivery'     ?'block':'none';
   document.getElementById('g-mesa').style.display = v==='Mesa (Local)' ?'block':'none';
+  if (v !== 'Delivery') { freteValor = 0; freteCalculado = false; atualizarTotalComFrete(); }
 }
 
 // ── ENVIAR PEDIDO ─────────────────────────────────────────────
@@ -896,7 +899,7 @@ async function sendOrder() {
   ['fn','ftel','fend-rua','fend-num','fend-bairro','fend-cidade','fmesa','fpgto','fobs'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
   document.getElementById('fentr').value='';
   entrgChange('');
-  freteValor = 0;
+  freteValor = 0; freteCalculado = false;
   const fr = document.getElementById('frete-result'); if(fr) { fr.style.display='none'; fr.textContent=''; }
   const fb = document.getElementById('frete-breakdown'); if(fb) fb.style.display='none';
 }
